@@ -26,16 +26,19 @@ class DBScan {
 public:
 	DBScan(const QList<Point> &points, qreal eps, int minPts);
 
+	const QList<Point> &getPoints() const;
+
 	void run();
-	void setClusters();
-	void setRegion(int index);
-	bool expandCluster(int index, int clusterId);
 
 	void printPoints() const;
 	void printClusters() const;
 	void printNoise() const;
 
 private:
+	void setClusters();
+	void setRegion(int index);
+	bool expandCluster(int index, int clusterId);
+
 	QList<Point> points;
 	QList<QList<int> > clusters;
 	QList<int> region;

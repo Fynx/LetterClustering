@@ -5,13 +5,63 @@ DBScan::DBScan(const QList<Point> &points, qreal eps, int minPts)
 	: points(points), eps(eps), minPts(minPts)
 {}
 
+const QList<Point> &DBScan::getPoints() const
+{
+	return points;
+}
+
 void DBScan::run()
 {
 	setClusters();
+// 	printPoints();
+// 	printClusters();
+// 	printNoise();
+}
 
-	printPoints();
-	printClusters();
-	printNoise();
+void DBScan::printPoints() const
+{
+	/** print points to console */
+	QString str;
+	for (const Point &p : points)
+		str += p + " ";
+	qDebug() << "The" << points.size() << "points are:" << str;
+}
+
+void DBScan::printClusters() const
+{
+	for (int i = 0; i < clusters.size(); i++) {
+		QString str;
+		int count = clusters[i].size();
+		QString plural = (count != 1) ? "s" : "";
+		qDebug("\nCluster %d consists of the following %d point%s:",
+		       i + 1, count, plural.toStdString().c_str());
+		for (int j : clusters[i])
+			str += " " + points[j] + " ";
+		qDebug() << str;
+	}
+}
+
+void DBScan::printNoise() const
+{
+	int total = 0;
+	for (const QList<int> &list : clusters)
+		total += list.size();
+
+	/** print any points which are Noise */
+	total = points.size() - total;
+	if (total > 0) {
+		QString plural = (total != 1) ? "s" : "";
+		QString verb = (total != 1) ? "are" : "is";
+		qDebug("\nThe following %d point%s %s Noise :\n",
+		       total, plural.toStdString().c_str(), verb.toStdString().c_str());
+		QString str;
+		for (const Point &p : points)
+			if (p.clusterId == Point::Noise)
+				str += " " + p + " ";
+		qDebug() << str;
+	} else {
+		qDebug() << "\nNo points are Noise";
+	}
 }
 
 void DBScan::setClusters()
@@ -19,8 +69,13 @@ void DBScan::setClusters()
 	if (points.isEmpty())
 		return;
 
+	qreal initEps = eps;
+
 	for (int i = 0; i < points.first().dim() - 1; ++i)
-		eps *= eps; /** square eps */
+		eps *= initEps; /** square eps */
+
+	qDebug() << "EPS:" << eps;
+
 	int clusterId = 1;
 	for (int i = 0; i < points.size(); ++i) {
 		Point p = points[i];
@@ -87,50 +142,4 @@ bool DBScan::expandCluster(int index, int clusterId)
 		seeds.removeOne(currentIndex);
 	}
 	return true;
-}
-
-void DBScan::printPoints() const
-{
-	/** print points to console */
-	QString str;
-	for (const Point &p : points)
-		str += p + " ";
-	qDebug() << "The" << points.size() << "points are:" << str;
-}
-
-void DBScan::printClusters() const
-{
-	for (int i = 0; i < clusters.size(); i++) {
-		QString str;
-		int count = clusters[i].size();
-		QString plural = (count != 1) ? "s" : "";
-		qDebug("\nCluster %d consists of the following %d point%s:",
-		       i + 1, count, plural.toStdString().c_str());
-		for (int j : clusters[i])
-			str += " " + points[j] + " ";
-		qDebug() << str;
-	}
-}
-
-void DBScan::printNoise() const
-{
-	int total = 0;
-	for (const QList<int> &list : clusters)
-		total += list.size();
-
-	/** print any points which are Noise */
-	total = points.size() - total;
-	if (total > 0) {
-		QString plural = (total != 1) ? "s" : "";
-		QString verb = (total != 1) ? "are" : "is";
-		qDebug("\nThe following %d point%s %s Noise :\n",
-		       total, plural.toStdString().c_str(), verb.toStdString().c_str());
-		QString str;
-		for (const Point &p : points)
-			if (p.clusterId == Point::Noise)
-				str += " " + p + " ";
-		qDebug() << str;
-	} else {
-		qDebug() << "\nNo points are Noise";
-	}
 }

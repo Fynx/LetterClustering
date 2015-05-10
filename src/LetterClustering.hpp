@@ -5,14 +5,15 @@
 
 class LetterClustering {
 public:
-	typedef QVector<QPoint> ImgData;
+	typedef QList<int> ImgData;
 
 	LetterClustering();
 	virtual ~LetterClustering();
 
 private:
 	ImgData loadImage(const QString &path);
-	void normaliseData();
+	void printLetter(const QList<QPoint> &data);
 
+	QVector<QString> fileNames;
 	QVector<ImgData> tra;
 };

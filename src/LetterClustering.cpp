@@ -4,40 +4,58 @@
 #include <QDebug>
 #include <QDir>
 #include <QTextStream>
+#include <QMap>
+#include <qmath.h>
+#include <iostream>
 
 LetterClustering::LetterClustering()
 {
-// 	QTextStream in(stdin);
-// 	QString dirPath("data/data/");
-// 	QDir dir(dirPath);
-// 	for (const QString &path : dir.entryList()) {
-// 		LetterClustering::ImgData imgData = loadImage(dirPath + "/" + path);
-// 		if (!imgData.isEmpty())
-// 			tra.append(imgData);
-// 	}
+	QString dirPath("data/data/");
+	QDir dir(dirPath);
+	for (const QString &path : dir.entryList()) {
+		LetterClustering::ImgData imgData = loadImage(dirPath + "/" + path);
+		if (!imgData.isEmpty()) {
+			tra.append(imgData);
+			fileNames.append(path);
+		}
+	}
 
-	QList<Point> pts = {
-		{{0,   100}},
-		{{0,   200}},
-		{{0,   275}},
-		{{100, 150}},
-		{{200, 100}},
-		{{250, 200}},
-		{{0,   300}},
-		{{100, 200}},
-		{{600, 700}},
-		{{650, 700}},
-		{{675, 700}},
-		{{675, 710}},
-		{{675, 720}},
-		{{50,  400}}
-	};
-
-        double eps = 100.0;
+        double eps = 1.038;
         int minPts = 3;
 
-	DBScan dbscan(pts, eps, minPts);
+	if (tra.isEmpty()) {
+		qDebug() << "No images.";
+		exit(0);
+	}
+
+	QList<Point> imgs;
+	for (const ImgData &data : tra)
+		imgs.append(Point(data));
+
+	DBScan dbscan(imgs, eps, minPts);
 	dbscan.run();
+
+	QMap<int, QList<QString> > clusters;
+
+	int i = 0;
+	int huge = 10000;
+	for (const Point &point : dbscan.getPoints()) {
+		if (point.clusterId == Point::Noise)
+			clusters[huge++].append(fileNames[i++]);
+		else
+			clusters[point.clusterId].append(fileNames[i++]);
+	}
+
+// 	qDebug() << dbscan.getPoints();
+
+	i = 1;
+	for (const QList<QString> &c : clusters) {
+		qDebug() << i++;
+		QString str;
+		for (const QString &s : c)
+			str += s + " ";
+		std::cout << str.toStdString() << "\n";
+	}
 
 	exit(0);
 }
@@ -48,7 +66,7 @@ LetterClustering::~LetterClustering()
 LetterClustering::ImgData LetterClustering::loadImage(const QString &path)
 {
 	QImage image(path);
-	ImgData data;
+	QList<QPair<int, QPoint> > data;
 
 	if (image.isNull())
 		return {};
@@ -56,22 +74,64 @@ LetterClustering::ImgData LetterClustering::loadImage(const QString &path)
 	int minY = image.height();
 	int minX = image.width();
 
-	for (int i = 0; i < image.height(); ++i) {
-		for (int j = 0; j < image.width(); ++j) {
-			if (qGray(image.pixel(j, i)) < 100) {
-				data.append(QPoint(i, j));
-				minX = qMin(minX, j);
-				minY = qMin(minY, i);
-			}
+	auto isBlack = [](QRgb rgb) -> int {
+		return (int) qGray(rgb) < 100;
+	};
+
+	for (int i = 1; i < image.height(); ++i) {
+		for (int j = 1; j < image.width(); ++j) {
+			data.append({isBlack(image.pixel(j, i)), QPoint(j, i)});
+			minX = qMin(minX, j);
+			minY = qMin(minY, i);
 		}
 	}
 
-	for (QPoint &point : data)
-		point -= QPoint(minX, minY);
+	for (auto &p : data)
+		p.second -= QPoint(minX, minY);
 
-	return data;
+
+	static const int Width  = 10;
+	static const int Height = 10;
+
+	int wMult = qCeil((qreal) image.width()  / (qreal) Width);
+	int hMult = qCeil((qreal) image.height() / (qreal) Height);
+
+	ImgData newData;
+	newData.reserve(Width * Height);
+	for (int i = 0; i < Height; ++i)
+		for (int j = 0; j < Width; ++j)
+			newData.append(0);
+
+	for (auto &p : data) {
+		int w = p.second.x() / wMult;
+		int h = p.second.y() / hMult;
+
+		newData[h * Width + w] += p.first;
+	}
+
+	return newData;
 }
 
-void LetterClustering::normaliseData()
+void LetterClustering::printLetter(const QList<QPoint> &data)
 {
+	int width  = 0;
+	int height = 0;
+	for (QPoint point : data) {
+		width = qMax(width, point.x());
+		height = qMax(height, point.y());
+	}
+
+	int index = 0;
+	for (int i = 0; i <= height; ++i) {
+		QString line;
+		for (int j = 0; j <= width; ++j) {
+			if (index < data.size() && data[index].x() == j && data[index].y() == i)
+				line += "*";
+			else
+				line += " ";
+			while (index < data.size() && (data[index].y() < i || (data[index].y() == i && data[index].x() <= j)))
+				++index;
+		}
+		qDebug() << line;
+	}
 }
