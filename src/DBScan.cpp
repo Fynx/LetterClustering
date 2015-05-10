@@ -19,11 +19,11 @@ void DBScan::setClusters()
 	if (points.isEmpty())
 		return;
 
-	eps *= eps; /** square eps */
+	for (int i = 0; i < points.first().dim() - 1; ++i)
+		eps *= eps; /** square eps */
 	int clusterId = 1;
 	for (int i = 0; i < points.size(); ++i) {
 		Point p = points[i];
-		qDebug() << "point" << p;
 		if (p.clusterId == Point::Unclassified)
 			if (expandCluster(i, clusterId))
 				++clusterId;
@@ -60,15 +60,11 @@ void DBScan::setRegion(int index)
 
 bool DBScan::expandCluster(int index, int clusterId)
 {
-	qDebug() << "expandCluster:" << points[index] << "clusterId:" << clusterId;
-
 	setRegion(index);
 	QList<int> seeds = region;
 
-	qDebug() << "seeds:" << seeds;
 	if (seeds.size() < minPts) { /** no core point */
 		points[index].clusterId = Point::Noise;
-		qDebug() << "NO CORE POINT.";
 		return false;
 	}
 	/** all points in seeds are density reachable from point 'p' */
@@ -76,10 +72,8 @@ bool DBScan::expandCluster(int index, int clusterId)
 		points[i].clusterId = clusterId;
 	seeds.removeOne(index);
 	while (seeds.size() > 0) {
-// 		qDebug() << "seeds now:" << seeds;
 		int currentIndex = seeds[0];
 		setRegion(currentIndex);
-// 		qDebug() << "result:" << region;
 		if (region.size() >= minPts) {
 			for (int i : region) {
 				Point &resultP = points[i];
@@ -129,7 +123,7 @@ void DBScan::printNoise() const
 	if (total > 0) {
 		QString plural = (total != 1) ? "s" : "";
 		QString verb = (total != 1) ? "are" : "is";
-		qDebug("\nThe following %d point%s %s NOISE :\n",
+		qDebug("\nThe following %d point%s %s Noise :\n",
 		       total, plural.toStdString().c_str(), verb.toStdString().c_str());
 		QString str;
 		for (const Point &p : points)
@@ -137,6 +131,6 @@ void DBScan::printNoise() const
 				str += " " + p + " ";
 		qDebug() << str;
 	} else {
-		qDebug() << "\nNo points are NOISE";
+		qDebug() << "\nNo points are Noise";
 	}
 }
