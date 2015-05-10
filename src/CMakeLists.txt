@@ -1,4 +1,5 @@
 set(LetterClustering_SRCS
+	DBScan.cpp
 	LetterClustering.cpp
 	main.cpp
 )

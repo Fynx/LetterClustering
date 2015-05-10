@@ -1,5 +1,4 @@
-#ifndef LetterClustering_H
-#define LetterClustering_H
+#pragma once
 
 #include <QtCore/QObject>
 #include <QImage>
@@ -13,9 +12,7 @@ public:
 
 private:
 	ImgData loadImage(const QString &path);
-	void insertData(const QImage &image);
+	void normaliseData();
 
 	QVector<ImgData> tra;
 };
-
-#endif // LetterClustering_H

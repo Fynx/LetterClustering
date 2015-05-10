@@ -1,5 +1,5 @@
 #include <QCoreApplication>
-#include "LetterClustering.h"
+#include "LetterClustering.hpp"
 
 int main(int argc, char **argv)
 {
