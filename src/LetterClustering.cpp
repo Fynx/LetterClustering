@@ -6,21 +6,21 @@
 #include <QTextStream>
 #include <QMap>
 #include <qmath.h>
-#include <iostream>
+#include <QString>
+#include <QFile>
 
-LetterClustering::LetterClustering()
+LetterClustering::LetterClustering(const QString &input, const QString &output)
 {
-	QString dirPath("data/data/");
-	QDir dir(dirPath);
+	QDir dir(input);
 	for (const QString &path : dir.entryList()) {
-		LetterClustering::ImgData imgData = loadImage(dirPath + "/" + path);
+		LetterClustering::ImgData imgData = loadImage(input + "/" + path);
 		if (!imgData.isEmpty()) {
 			tra.append(imgData);
 			fileNames.append(path);
 		}
 	}
 
-        double eps = 1.038;
+        double eps = 1.030;
         int minPts = 3;
 
 	if (tra.isEmpty()) {
@@ -46,16 +46,23 @@ LetterClustering::LetterClustering()
 			clusters[point.clusterId].append(fileNames[i++]);
 	}
 
-// 	qDebug() << dbscan.getPoints();
+	QFile file(output);
 
-	i = 1;
+	if (!file.open(QIODevice::WriteOnly)) {
+		qDebug() << "Unable to open file!";
+		exit(0);
+	}
+
+	QTextStream out(&file);
+
 	for (const QList<QString> &c : clusters) {
-		qDebug() << i++;
 		QString str;
 		for (const QString &s : c)
 			str += s + " ";
-		std::cout << str.toStdString() << "\n";
+		out << str << "\n";
 	}
+
+	file.close();
 
 	exit(0);
 }

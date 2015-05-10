@@ -74,8 +74,6 @@ void DBScan::setClusters()
 	for (int i = 0; i < points.first().dim() - 1; ++i)
 		eps *= initEps; /** square eps */
 
-	qDebug() << "EPS:" << eps;
-
 	int clusterId = 1;
 	for (int i = 0; i < points.size(); ++i) {
 		Point p = points[i];

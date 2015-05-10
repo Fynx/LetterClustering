@@ -7,7 +7,7 @@ class LetterClustering {
 public:
 	typedef QList<int> ImgData;
 
-	LetterClustering();
+	LetterClustering(const QString &input, const QString &output);
 	virtual ~LetterClustering();
 
 private:
